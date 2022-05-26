@@ -34,6 +34,9 @@ abstract class CameraController {
   /// Switch the torch's state.
   void torch();
 
+  /// Zoom state of camera.
+  void zoom(double value);
+
   /// Release the resources of the camera.
   void dispose();
 }
@@ -139,6 +142,12 @@ class _CameraController implements CameraController {
     var state =
         torchState.value == TorchState.off ? TorchState.on : TorchState.off;
     method.invokeMethod('torch', state.index);
+  }
+
+  @override
+  void zoom(double value) {
+    ensure('zoom');
+    method.invokeMethod('zoom', value);
   }
 
   @override

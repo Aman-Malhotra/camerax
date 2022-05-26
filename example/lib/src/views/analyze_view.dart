@@ -30,38 +30,47 @@ class _AnalyzeViewState extends State<AnalyzeView>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          CameraView(cameraController),
-          AnimatedLine(
-            offsetAnimation: offsetAnimation,
-            opacityAnimation: opacityAnimation,
-          ),
-          Positioned(
-            left: 24.0,
-            top: 32.0,
-            child: IconButton(
-              icon: Icon(Icons.cancel, color: Colors.white),
-              onPressed: () => Navigator.of(context).pop(),
+      body: GestureDetector(
+        onScaleStart: (details) {
+
+        },
+        onScaleUpdate: (details) {
+          //TODO: Quite unstable code :P
+          cameraController.zoom(details.scale.clamp(0.0, 1.0));
+        },
+        child: Stack(
+          children: [
+            CameraView(cameraController),
+            AnimatedLine(
+              offsetAnimation: offsetAnimation,
+              opacityAnimation: opacityAnimation,
             ),
-          ),
-          Container(
-            alignment: Alignment.bottomCenter,
-            margin: EdgeInsets.only(bottom: 80.0),
-            child: IconButton(
-              icon: ValueListenableBuilder(
-                valueListenable: cameraController.torchState,
-                builder: (context, state, child) {
-                  final color =
-                      state == TorchState.off ? Colors.grey : Colors.white;
-                  return Icon(Icons.bolt, color: color);
-                },
+            Positioned(
+              left: 24.0,
+              top: 32.0,
+              child: IconButton(
+                icon: Icon(Icons.cancel, color: Colors.white),
+                onPressed: () => Navigator.of(context).pop(),
               ),
-              iconSize: 32.0,
-              onPressed: () => cameraController.torch(),
             ),
-          ),
-        ],
+            Container(
+              alignment: Alignment.bottomCenter,
+              margin: EdgeInsets.only(bottom: 80.0),
+              child: IconButton(
+                icon: ValueListenableBuilder(
+                  valueListenable: cameraController.torchState,
+                  builder: (context, state, child) {
+                    final color =
+                        state == TorchState.off ? Colors.grey : Colors.white;
+                    return Icon(Icons.bolt, color: color);
+                  },
+                ),
+                iconSize: 32.0,
+                onPressed: () => cameraController.torch(),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
