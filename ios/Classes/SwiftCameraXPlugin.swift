@@ -46,7 +46,7 @@ public class SwiftCameraXPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, 
         case "stop":
             stopNative(result)
         case "zoom":
-            zoomNative(call, result)
+
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -178,14 +178,8 @@ public class SwiftCameraXPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, 
     }
 
     func zoomNative(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
-      do {
-          try device.lockForConfiguration()
-          defer { device.unlockForConfiguration() }
-          device.videoZoomFactor = (call.arguments as! Double).clamped(1.0, 100.0)
-          result(nil)
-      } catch {
-          error.throwNative(result)
-      }
+      // TODO: Don't know enough iOS to implement this
+      result(nil)
     }
     
     func analyzeNative(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
