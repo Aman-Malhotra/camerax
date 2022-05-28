@@ -12,6 +12,8 @@ class _AnalyzeViewState extends State<AnalyzeView>
   late AnimationController animationConrtroller;
   late Animation<double> offsetAnimation;
   late Animation<double> opacityAnimation;
+  late double minZoom;
+  late double maxZoom;
 
   @override
   void initState() {
@@ -30,38 +32,50 @@ class _AnalyzeViewState extends State<AnalyzeView>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          CameraView(cameraController),
-          AnimatedLine(
-            offsetAnimation: offsetAnimation,
-            opacityAnimation: opacityAnimation,
-          ),
-          Positioned(
-            left: 24.0,
-            top: 32.0,
-            child: IconButton(
-              icon: Icon(Icons.cancel, color: Colors.white),
-              onPressed: () => Navigator.of(context).pop(),
+      body: GestureDetector(
+        onScaleStart: (details) {
+
+        },
+        onScaleUpdate: (details) {
+          if (details.scale >= 1.0) {
+            cameraController.zoom((details.scale / 5.0).clamp(minZoom, maxZoom));
+          } else {
+            cameraController.zoom(details.scale.clamp(minZoom, maxZoom));
+          }
+        },
+        child: Stack(
+          children: [
+            CameraView(cameraController),
+            AnimatedLine(
+              offsetAnimation: offsetAnimation,
+              opacityAnimation: opacityAnimation,
             ),
-          ),
-          Container(
-            alignment: Alignment.bottomCenter,
-            margin: EdgeInsets.only(bottom: 80.0),
-            child: IconButton(
-              icon: ValueListenableBuilder(
-                valueListenable: cameraController.torchState,
-                builder: (context, state, child) {
-                  final color =
-                      state == TorchState.off ? Colors.grey : Colors.white;
-                  return Icon(Icons.bolt, color: color);
-                },
+            Positioned(
+              left: 24.0,
+              top: 32.0,
+              child: IconButton(
+                icon: Icon(Icons.cancel, color: Colors.white),
+                onPressed: () => Navigator.of(context).pop(),
               ),
-              iconSize: 32.0,
-              onPressed: () => cameraController.torch(),
             ),
-          ),
-        ],
+            Container(
+              alignment: Alignment.bottomCenter,
+              margin: EdgeInsets.only(bottom: 80.0),
+              child: IconButton(
+                icon: ValueListenableBuilder(
+                  valueListenable: cameraController.torchState,
+                  builder: (context, state, child) {
+                    final color =
+                        state == TorchState.off ? Colors.grey : Colors.white;
+                    return Icon(Icons.bolt, color: color);
+                  },
+                ),
+                iconSize: 32.0,
+                onPressed: () => cameraController.torch(),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -75,6 +89,10 @@ class _AnalyzeViewState extends State<AnalyzeView>
 
   void start() async {
     await cameraController.startAsync();
+    minZoom = await cameraController.getMinZoomLevel();
+    maxZoom = await cameraController.getMaxZoomLevel();
+    print('Zoom: MIN $minZoom MAX $maxZoom');
+
     try {
       final barcode = await cameraController.barcodes.first;
       display(barcode);

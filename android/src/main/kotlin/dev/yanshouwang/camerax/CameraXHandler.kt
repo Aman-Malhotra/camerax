@@ -40,7 +40,17 @@ class CameraXHandler(private val activity: Activity, private val textureRegistry
             "request" -> requestNative(result)
             "start" -> startNative(call, result)
             "torch" -> torchNative(call, result)
-            "analyze" -> analyzeNative(call, result)
+            "setZoomLevel" -> zoomNative(call, result)
+            "getMaxZoomLevel" -> getMaxZoomLevel(result)
+            "getMinZoomLevel" -> getMinZoomLevel(result)
+            "startScan" -> {
+                analyzeMode = AnalyzeMode.BARCODE
+                result.success(null)
+            }
+            "stopScan" -> {
+                analyzeMode = AnalyzeMode.NONE
+                result.success(null)
+            }
             "stop" -> stopNative(result)
             else -> result.notImplemented()
         }
@@ -101,8 +111,14 @@ class CameraXHandler(private val activity: Activity, private val textureRegistry
             val analyzer = ImageAnalysis.Analyzer { imageProxy -> // YUV_420_888 format
                 when (analyzeMode) {
                     AnalyzeMode.BARCODE -> {
-                        val mediaImage = imageProxy.image ?: return@Analyzer
-                        val inputImage = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
+                        val inputImage = InputImage.fromByteArray(
+                            imageProxy.nv21,
+                            imageProxy.width,
+                            imageProxy.height,
+                            imageProxy.imageInfo.rotationDegrees,
+                            InputImage.IMAGE_FORMAT_NV21
+                        )
+
                         val scanner = BarcodeScanning.getClient()
                         scanner.process(inputImage)
                                 .addOnSuccessListener { barcodes ->
@@ -125,6 +141,8 @@ class CameraXHandler(private val activity: Activity, private val textureRegistry
             val selector =
                     if (call.arguments == 0) CameraSelector.DEFAULT_FRONT_CAMERA
                     else CameraSelector.DEFAULT_BACK_CAMERA
+            // Remove existing use cases
+            cameraProvider!!.unbindAll()
             camera = cameraProvider!!.bindToLifecycle(owner, selector, preview, analysis)
             camera!!.cameraInfo.torchState.observe(owner, { state ->
                 // TorchState.OFF = 0; TorchState.ON = 1
@@ -149,9 +167,19 @@ class CameraXHandler(private val activity: Activity, private val textureRegistry
         result.success(null)
     }
 
-    private fun analyzeNative(call: MethodCall, result: MethodChannel.Result) {
-        analyzeMode = call.arguments as Int
+    private fun zoomNative(call: MethodCall, result: MethodChannel.Result) {
+        val zoom = call.arguments as? Double
+
+        camera!!.cameraControl.setLinearZoom(zoom?.toFloat() ?: 0f)
         result.success(null)
+    }
+
+    private fun getMinZoomLevel(result: MethodChannel.Result) {
+        result.success(0.0)
+    }
+
+    private fun getMaxZoomLevel(result: MethodChannel.Result) {
+        result.success(1.0)
     }
 
     private fun stopNative(result: MethodChannel.Result) {
