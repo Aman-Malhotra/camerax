@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.pm.PackageManager
 import android.util.Log
+import android.util.Size
 import android.view.Surface
 import androidx.annotation.IntDef
 import androidx.annotation.NonNull
@@ -111,13 +112,8 @@ class CameraXHandler(private val activity: Activity, private val textureRegistry
             val analyzer = ImageAnalysis.Analyzer { imageProxy -> // YUV_420_888 format
                 when (analyzeMode) {
                     AnalyzeMode.BARCODE -> {
-                        val inputImage = InputImage.fromByteArray(
-                            imageProxy.nv21,
-                            imageProxy.width,
-                            imageProxy.height,
-                            imageProxy.imageInfo.rotationDegrees,
-                            InputImage.IMAGE_FORMAT_NV21
-                        )
+                        val mediaImage = imageProxy.image ?: return@Analyzer
+                        val inputImage = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
 
                         val scanner = BarcodeScanning.getClient()
                         scanner.process(inputImage)
