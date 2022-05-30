@@ -18,7 +18,7 @@ class Barcode {
   /// Returns raw bytes as it was encoded in the barcode.
   ///
   /// Returns null if the raw bytes can not be determined.
-  final Uint8List rawBytes;
+  final Uint8List? rawBytes;
 
   /// Returns barcode value as it was encoded in the barcode. Structured values are not parsed, for example: 'MEBKM:TITLE:Google;URL://www.google.com;;'.
   ///
@@ -34,7 +34,7 @@ class Barcode {
   /// If the value structure cannot be parsed, TYPE_TEXT will be returned. If the recognized structure type is not defined in your current version of SDK, TYPE_UNKNOWN will be returned.
   ///
   /// Note that the built-in parsers only recognize a few popular value structures. For your specific use case, you might want to directly consume rawValue and implement your own parsing logic.
-  final BarcodeType type;
+  final BarcodeType? type;
 
   /// Gets parsed calendar event details.
   final CalendarEvent? calendarEvent;
@@ -69,7 +69,7 @@ class Barcode {
         format = toFormat(data['format']),
         rawBytes = data['rawBytes'],
         rawValue = data['rawValue'],
-        type = BarcodeType.values[data['type']],
+        type = BarcodeType.values[data['type'] ?? 0],
         calendarEvent = toCalendarEvent(data['calendarEvent']),
         contactInfo = toContactInfo(data['contactInfo']),
         driverLicense = toDriverLicense(data['driverLicense']),
