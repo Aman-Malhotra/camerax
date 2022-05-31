@@ -4,6 +4,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.pm.PackageManager
+import android.content.res.Resources
 import android.util.Log
 import android.util.Size
 import android.view.Surface
@@ -14,10 +15,16 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
+import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
+import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
 import io.flutter.plugin.common.*
 import io.flutter.view.TextureRegistry
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class CameraXHandler(private val activity: Activity, private val textureRegistry: TextureRegistry)
     : MethodChannel.MethodCallHandler, EventChannel.StreamHandler, PluginRegistry.RequestPermissionsResultListener {
@@ -114,8 +121,11 @@ class CameraXHandler(private val activity: Activity, private val textureRegistry
                     AnalyzeMode.BARCODE -> {
                         val mediaImage = imageProxy.image ?: return@Analyzer
                         val inputImage = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
-
-                        val scanner = BarcodeScanning.getClient()
+                        val scanner = BarcodeScanning.getClient(
+                            BarcodeScannerOptions.Builder()
+                                .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
+                                .build()
+                        )
                         scanner.process(inputImage)
                                 .addOnSuccessListener { barcodes ->
                                     for (barcode in barcodes) {
@@ -131,6 +141,12 @@ class CameraXHandler(private val activity: Activity, private val textureRegistry
             }
             val analysis = ImageAnalysis.Builder()
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                    .setTargetResolution(
+                        Size(
+                            Resources.getSystem().displayMetrics.widthPixels,
+                            Resources.getSystem().displayMetrics.heightPixels
+                        )
+                    )
                     .build().apply { setAnalyzer(executor, analyzer) }
             // Bind to lifecycle.
             val owner = activity as LifecycleOwner
