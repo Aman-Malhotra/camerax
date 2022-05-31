@@ -17,14 +17,8 @@ class DisplayView extends StatelessWidget {
             children: [
               Column(
                 children: [
-                  Image.asset(
-                    barcode.type.source,
-                    width: 40.0,
-                    height: 40.0,
-                  ),
-                  Container(height: 8.0),
                   Text(
-                    barcode.type.name,
+                    barcode.type?.name ?? '',
                     style: TextStyle(
                       fontSize: 16.0,
                       color: Color(0x99000000),
@@ -63,7 +57,7 @@ class DisplayView extends StatelessWidget {
                         ),
                         Container(height: 4.0),
                         Text(
-                          barcode.type.name,
+                          barcode.type?.name ?? '',
                           style: TextStyle(
                             fontSize: 16.0,
                             color: Color(0x99000000),
