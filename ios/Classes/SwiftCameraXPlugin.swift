@@ -277,13 +277,13 @@ public class SwiftCameraXPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, 
     //MARK: ZOOM
     private func getMaxZoomLevel(result: @escaping FlutterResult) {
         @MainThreadClosure var mainThreadResult: ((Any?) -> Void)? = result
-        mainThreadResult?(NSNumber(floatLiteral: device?.maxZoom ?? 1))
+        mainThreadResult?(NSNumber(value: (Float(device?.maxZoom ?? 1))))
 
     }
     
     private func getMinZoomLevel(result: @escaping FlutterResult) {
         @MainThreadClosure var mainThreadResult: ((Any?) -> Void)? = result
-        mainThreadResult?(NSNumber(floatLiteral: device?.minZoom ?? 1))
+        mainThreadResult?(NSNumber(value: (Float(device?.minZoom ?? 1))))
     }
     
     private func setZoomLevel(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
