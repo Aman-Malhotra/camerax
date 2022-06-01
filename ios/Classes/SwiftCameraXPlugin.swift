@@ -159,7 +159,7 @@ public class SwiftCameraXPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, 
         for input in captureSession?.inputs ?? []{
             captureSession?.removeInput(input)
         }
-        for output in captureSession?.outputs ? [] {
+        for output in captureSession?.outputs ?? [] {
             captureSession?.removeOutput(output)
         }
         device?.removeObserver(self, forKeyPath: #keyPath(AVCaptureDevice.torchMode))
