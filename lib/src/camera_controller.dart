@@ -25,8 +25,7 @@ abstract class CameraController {
   /// [facing] target facing used to select camera.
   ///
   /// [formats] the barcode formats for image analyzer.
-  factory CameraController([CameraFacing facing = CameraFacing.back]) =>
-      _CameraController(facing);
+  factory CameraController([CameraFacing facing = CameraFacing.back]) => _CameraController(facing);
 
   /// Start the camera asynchronously.
   Future<void> startAsync();
@@ -34,15 +33,28 @@ abstract class CameraController {
   /// Switch the torch's state.
   void torch();
 
+  /// Set zoom for camera.
+  void zoom(double value);
+
+  /// Get min zoom of camera.
+  Future<double> getMinZoomLevel();
+
+  /// Get max zoom of camera.
+  Future<double> getMaxZoomLevel();
+
   /// Release the resources of the camera.
   void dispose();
+
+  /// Start scanning QR Code
+  void startScan();
+
+  /// Stop scanning QR Code
+  void stopScan();
 }
 
 class _CameraController implements CameraController {
-  static const MethodChannel method =
-      MethodChannel('yanshouwang.dev/camerax/method');
-  static const EventChannel event =
-      EventChannel('yanshouwang.dev/camerax/event');
+  static const MethodChannel method = MethodChannel('yanshouwang.dev/camerax/method');
+  static const EventChannel event = EventChannel('yanshouwang.dev/camerax/event');
 
   static const undetermined = 0;
   static const authorized = 1;
@@ -77,8 +89,8 @@ class _CameraController implements CameraController {
     id = hashCode;
     // Create barcode stream controller.
     barcodesController = StreamController.broadcast(
-      onListen: () => tryAnalyze(analyze_barcode),
-      onCancel: () => tryAnalyze(analyze_none),
+      onListen: () => startScan(),
+      onCancel: () => stopScan(),
     );
     // Listen event handler.
     subscription =
@@ -100,13 +112,6 @@ class _CameraController implements CameraController {
       default:
         throw UnimplementedError();
     }
-  }
-
-  void tryAnalyze(int mode) {
-    if (hashCode != id) {
-      return;
-    }
-    method.invokeMethod('analyze', mode);
   }
 
   @override
@@ -142,6 +147,24 @@ class _CameraController implements CameraController {
   }
 
   @override
+  void zoom(double value) {
+    ensure('setZoomLevel');
+    method.invokeMethod('setZoomLevel', value);
+  }
+
+  @override
+  Future<double> getMaxZoomLevel() async {
+    double maxZoom = await method.invokeMethod('getMaxZoomLevel');
+    return maxZoom;
+  }
+
+  @override
+  Future<double> getMinZoomLevel() async {
+    double minZoom = await method.invokeMethod('getMinZoomLevel');
+    return minZoom;
+  }
+
+  @override
   void dispose() {
     if (hashCode == id) {
       stop();
@@ -160,4 +183,10 @@ class _CameraController implements CameraController {
         'CameraController methods should not be used after calling dispose.';
     assert(hashCode == id, message);
   }
+
+  @override
+  void startScan() => method.invokeMethod('startScan');
+
+  @override
+  void stopScan() => method.invokeMethod('stopScan');
 }

@@ -203,7 +203,11 @@ public class SwiftCameraXPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, 
     //MARK: METADATA
     public func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection) {
         if let qrData = metadataObjects.first as? AVMetadataMachineReadableCodeObject, let qrString = qrData.stringValue {
-            let event: [String: Any?] = ["name": "barcode", "data": ["rawValue": qrString, "qrCorners": qrData.corners]]
+            var qrCorners = [[String: CGFloat]]()
+            for qrElement in qrData.corners {
+                qrCorners.append(["x": qrElement.x, "y": qrElement.y])
+            }
+            let event: [String: Any?] = ["name": "barcode", "data": ["rawValue": qrString, "corners": qrCorners]]
             sink?(event)
         }
     }

@@ -16,7 +16,7 @@ List<Offset>? toCorners(List<dynamic>? data) {
   }
 }
 
-BarcodeFormat toFormat(int value) {
+BarcodeFormat toFormat(int? value) {
   switch (value) {
     case 0:
       return BarcodeFormat.all;
