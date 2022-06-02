@@ -44,12 +44,6 @@ abstract class CameraController {
 
   /// Release the resources of the camera.
   void dispose();
-
-  /// Start scanning QR Code
-  void startScan();
-
-  /// Stop scanning QR Code
-  void stopScan();
 }
 
 class _CameraController implements CameraController {
@@ -59,9 +53,6 @@ class _CameraController implements CameraController {
   static const undetermined = 0;
   static const authorized = 1;
   static const denied = 2;
-
-  static const analyze_none = 0;
-  static const analyze_barcode = 1;
 
   static int? id;
   static StreamSubscription? subscription;
@@ -183,10 +174,8 @@ class _CameraController implements CameraController {
         'CameraController methods should not be used after calling dispose.';
     assert(hashCode == id, message);
   }
-
-  @override
-  void startScan() => method.invokeMethod('startScan');
-
-  @override
-  void stopScan() => method.invokeMethod('stopScan');
 }
+
+void startScan() => _CameraController.method.invokeMethod('startScan');
+
+void stopScan() => _CameraController.method.invokeMethod('stopScan');
