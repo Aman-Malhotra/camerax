@@ -14,7 +14,9 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
+import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
+import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
 import io.flutter.plugin.common.*
 import io.flutter.view.TextureRegistry
@@ -118,7 +120,11 @@ class CameraXHandler(private val activity: Activity, private val textureRegistry
                     AnalyzeMode.BARCODE -> {
                         val mediaImage = imageProxy.image ?: return@Analyzer
                         val inputImage = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
-                        val scanner = BarcodeScanning.getClient()
+                        val scanner = BarcodeScanning.getClient(
+                            BarcodeScannerOptions.Builder()
+                                .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
+                                .build()
+                        )
                         scanner.process(inputImage)
                                 .addOnSuccessListener { barcodes ->
                                     for (barcode in barcodes) {
