@@ -4,7 +4,6 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.pm.PackageManager
-import android.content.res.Resources
 import android.util.Log
 import android.util.Size
 import android.view.Surface
@@ -15,16 +14,12 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
-import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
-import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
 import io.flutter.plugin.common.*
 import io.flutter.view.TextureRegistry
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 class CameraXHandler(private val activity: Activity, private val textureRegistry: TextureRegistry)
     : MethodChannel.MethodCallHandler, EventChannel.StreamHandler, PluginRegistry.RequestPermissionsResultListener {
@@ -38,6 +33,8 @@ class CameraXHandler(private val activity: Activity, private val textureRegistry
     private var cameraProvider: ProcessCameraProvider? = null
     private var camera: Camera? = null
     private var textureEntry: TextureRegistry.SurfaceTextureEntry? = null
+
+    private var executor: ExecutorService? = null
 
     @AnalyzeMode
     private var analyzeMode: Int = AnalyzeMode.NONE
@@ -101,7 +98,7 @@ class CameraXHandler(private val activity: Activity, private val textureRegistry
 
     private fun startNative(call: MethodCall, result: MethodChannel.Result) {
         val future = ProcessCameraProvider.getInstance(activity)
-        val executor = ContextCompat.getMainExecutor(activity)
+        executor = Executors.newSingleThreadExecutor()
         future.addListener({
             cameraProvider = future.get()
             textureEntry = textureRegistry.createSurfaceTexture()
@@ -112,7 +109,7 @@ class CameraXHandler(private val activity: Activity, private val textureRegistry
                 val texture = textureEntry!!.surfaceTexture()
                 texture.setDefaultBufferSize(resolution.width, resolution.height)
                 val surface = Surface(texture)
-                request.provideSurface(surface, executor, { })
+                request.provideSurface(surface, executor!!, { })
             }
             val preview = Preview.Builder().build().apply { setSurfaceProvider(surfaceProvider) }
             // Analyzer
@@ -121,11 +118,7 @@ class CameraXHandler(private val activity: Activity, private val textureRegistry
                     AnalyzeMode.BARCODE -> {
                         val mediaImage = imageProxy.image ?: return@Analyzer
                         val inputImage = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
-                        val scanner = BarcodeScanning.getClient(
-                            BarcodeScannerOptions.Builder()
-                                .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
-                                .build()
-                        )
+                        val scanner = BarcodeScanning.getClient()
                         scanner.process(inputImage)
                                 .addOnSuccessListener { barcodes ->
                                     for (barcode in barcodes) {
@@ -141,13 +134,7 @@ class CameraXHandler(private val activity: Activity, private val textureRegistry
             }
             val analysis = ImageAnalysis.Builder()
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                    .setTargetResolution(
-                        Size(
-                            Resources.getSystem().displayMetrics.widthPixels,
-                            Resources.getSystem().displayMetrics.heightPixels
-                        )
-                    )
-                    .build().apply { setAnalyzer(executor, analyzer) }
+                    .build().apply { setAnalyzer(executor!!, analyzer) }
             // Bind to lifecycle.
             val owner = activity as LifecycleOwner
             val selector =
@@ -170,7 +157,7 @@ class CameraXHandler(private val activity: Activity, private val textureRegistry
             val size = if (portrait) mapOf("width" to width, "height" to height) else mapOf("width" to height, "height" to width)
             val answer = mapOf("textureId" to textureId, "size" to size, "torchable" to camera!!.torchable)
             result.success(answer)
-        }, executor)
+        }, ContextCompat.getMainExecutor(activity))
     }
 
     private fun torchNative(call: MethodCall, result: MethodChannel.Result) {
@@ -199,6 +186,7 @@ class CameraXHandler(private val activity: Activity, private val textureRegistry
         camera!!.cameraInfo.torchState.removeObservers(owner)
         cameraProvider!!.unbindAll()
         textureEntry!!.release()
+        executor?.shutdown()
 
         analyzeMode = AnalyzeMode.NONE
         camera = null
